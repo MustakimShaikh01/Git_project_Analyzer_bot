@@ -1,115 +1,105 @@
-# RepoAnalyzer 🧠
+# 🤖 RepoAnalyzer: AI Code Intelligence Platform
 
-> **Multi-tenant AI code intelligence platform** — ingest GitHub repositories, index them with FAISS, and query them with RAG + local LLMs.
+[![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
+[![Next.js](https://img.shields.io/badge/Frontend-Next.js-000000?style=for-the-badge&logo=nextdotjs)](https://nextjs.org)
+[![Docker](https://img.shields.io/badge/Deployment-Docker-2496ED?style=for-the-badge&logo=docker)](https://www.docker.com)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
-[![CI](https://github.com/you/repoanalyzer/actions/workflows/ci.yml/badge.svg)](https://github.com/you/repoanalyzer/actions)
+**RepoAnalyzer** is a production-grade AI code intelligence platform designed for senior engineering teams. It ingests large repositories, indexes them with semantic vector embeddings, and provides a high-performance streaming chat interface for deep codebase analysis.
 
 ---
 
-## Architecture
+## ⚡ Key Engineering Features
 
+### 🚀 High-Performance RAG v2
+Our retrieval pipeline isn't just a simple search. It uses senior-level optimization techniques:
+- **MMR (Max Marginal Relevance)**: Diversifies context by penalizing redundant code chunks, ensuring the LLM sees a broader view of the codebase.
+- **Query Rewriting**: Automatically expands technical shorthand (e.g., "auth" → "authentication authorization") to improve embedding recall.
+- **SSE Streaming**: Token-by-token server-sent events for a real-time, ChatGPT-like interface.
+
+### 💾 Scalability & Performance
+- **Redis Answer Caching**: Identical queries return in sub-milliseconds from a global cache.
+- **FAISS Vector Search**: Industry-standard vector storage for lightning-fast semantic retrieval.
+- **Celery Task Queue**: Robust asynchronous ingestion flow for handling large repositories without blocking the API.
+
+---
+
+## 🛠 Tech Stack
+
+| Component | Technology |
+| :--- | :--- |
+| **Backend** | Python 3.10+, FastAPI, Pydantic v2 |
+| **Frontend** | React 19, Next.js 15+ (App Router), Tailwind CSS v4 |
+| **Vector Store** | FAISS |
+| **Embeddings** | SentenceTransformers (all-MiniLM-L6-v2) |
+| **LLM Adapter** | Ollama (Llama 3) |
+| **Caching** | Redis |
+| **Database** | PostgreSQL (Metadata Tracking) |
+
+---
+
+## 🗺 System Architecture
+
+```mermaid
+graph TD
+    Client[Next.js Frontend] <--> Gateway[FastAPI Gateway]
+    Gateway <--> Redis[Redis Cache]
+    Gateway --> Worker[Celery Worker]
+    Worker --> Clone[Git Clone]
+    Clone --> Chunk[Semantic Chunker]
+    Chunk --> Embed[SentenceTransformers]
+    Embed --> Vector[FAISS Store]
+    Gateway <--> Query[Query Engine]
+    Query --> Vector
+    Query --> LLM[Ollama / Llama3]
 ```
-Client (Next.js)
-    ↓
-FastAPI (JWT Auth + Rate Limiting)
-    ↓
-Use Cases (Clean Architecture)
-    ├── AnalyzeRepo  → Celery Worker → clone → chunk → embed → FAISS
-    └── QueryRepo    → embed query → FAISS search → compress → LLM → citations
-    ↓
-Storage
-    ├── PostgreSQL  (metadata, users, query history)
-    ├── FAISS       (per-repo vector indexes on disk)
-    └── Redis       (Celery broker + result backend)
-```
 
-## Quick Start
+---
 
+## 🏁 Getting Started
+
+### Prerequisites
+- Docker & Docker Compose
+- [Ollama](https://ollama.com/) running locally (for LLM inference)
+
+### Option 1: Docker (Recommended)
+This is the fastest way to get the full production environment running:
 ```bash
-# 1. Start infrastructure
-docker-compose up -d db redis
+docker-compose up --build
+```
+- **UI**: [http://localhost:3000](http://localhost:3000)
+- **API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-# 2. Backend
+### Option 2: Local Development
+**Backend Setup:**
+```bash
 cd backend
-cp .env.example .env
-python -m venv .venv && source .venv/bin/activate
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-uvicorn main:app --reload
+python main.py
+```
 
-# 3. Worker (separate terminal)
-celery -A app.infrastructure.worker.tasks.celery_app worker -l info -Q indexing
-
-# 4. Frontend
+**Frontend Setup:**
+```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-## Run Tests (TDD)
+---
 
+## 🧪 Testing & Reliability
+We maintain a **35+ test suite** covering Unit and Integration layers.
 ```bash
 cd backend
-source .venv/bin/activate
-pip install -r requirements-test.txt
 pytest tests/ -v
 ```
 
-**35 tests, 0 failures.**
+---
 
-## Environment Variables
+## 📜 License
+Internal use only. See LICENSE for details.
 
-| Variable | Default | Description |
-|---|---|---|
-| `DATABASE_URL` | `postgresql://localhost/repoanalyzer` | PostgreSQL URL |
-| `REDIS_URL` | `redis://localhost:6379/0` | Redis URL |
-| `FAISS_DIR` | `/tmp/faiss_indexes` | Where FAISS indexes are stored |
-| `JWT_SECRET` | *(required in prod)* | JWT signing key |
-| `OLLAMA_URL` | `http://localhost:11434` | Ollama server |
-| `OLLAMA_MODEL` | `llama3` | Model for RAG answers |
-
-## Project Structure
-
-```
-repoanalyzer/
-├── backend/
-│   ├── app/
-│   │   ├── domain/          # Pure business rules (Repo, User, Query)
-│   │   ├── application/     # Use cases (AnalyzeRepo, QueryRepo, chunk_text)
-│   │   ├── infrastructure/  # DB, FAISS, Embeddings, LLM, Celery
-│   │   └── interfaces/      # FastAPI routes
-│   ├── tests/
-│   │   ├── test_unit.py         # 25 unit tests (no I/O)
-│   │   └── test_integration.py  # 10 HTTP integration tests
-│   └── main.py              # Composition root
-├── frontend/                # Next.js App Router
-│   └── src/app/
-│       ├── page.tsx         # Auth (login/register)
-│       ├── dashboard/       # Repo list + stats
-│       └── repos/[repoId]/  # Chat UI with citations
-└── docker-compose.yml
-```
-
-## API Reference
-
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/health` | Health check |
-| `POST` | `/auth/register` | Create account |
-| `POST` | `/auth/login` | Get JWT token |
-| `POST` | `/repos` | Add + index repo (async) |
-| `GET` | `/repos` | List your repos |
-| `GET` | `/repos/{id}` | Repo status + chunk count |
-| `POST` | `/repos/{id}/query` | RAG query |
-| `GET` | `/repos/{id}/history` | Query history |
-
-## Key Design Decisions
-
-| Decision | Choice | Why |
-|---|---|---|
-| Vector DB | FAISS (local) | Free, fast, swappable to Pinecone |
-| Embeddings | sentence-transformers | 384-dim, runs on CPU, no API key |
-| LLM | Ollama (local) | Free, private, swappable |
-| Queue | Celery + Redis | Async ingestion, crash-safe |
-| Auth | JWT HS256 | Stateless, scalable |
-| Architecture | Clean/DDD | Testable, domain isolated |
-# Git_project_Analyzer_bot
+---
+Developed with ❤️ by the RepoAnalyzer Team.

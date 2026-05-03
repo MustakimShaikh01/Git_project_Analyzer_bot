@@ -6,8 +6,6 @@ This is called by the Celery worker (async).
 from __future__ import annotations
 
 import logging
-import os
-import shutil
 import tempfile
 import time
 from pathlib import Path

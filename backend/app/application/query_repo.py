@@ -13,11 +13,11 @@ import hashlib
 import json
 import logging
 import time
-from typing import Generator, Iterator
+from typing import Generator
 from uuid import UUID
 
 from app.domain.query import QueryRecord, SearchResult
-from app.domain.repo import Repo, RepoStatus
+from app.domain.repo import Repo
 
 logger = logging.getLogger(__name__)
 

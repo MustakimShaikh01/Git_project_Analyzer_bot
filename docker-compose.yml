@@ -1,0 +1,70 @@
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: repoanalyzer
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/repoanalyzer
+      REDIS_URL: redis://redis:6379/0
+      FAISS_DIR: /app/faiss_indexes
+      OLLAMA_URL: http://host.docker.internal:11434
+      JWT_SECRET: change-in-production
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - faiss_data:/app/faiss_indexes
+
+  worker:
+    build:
+      context: ./backend
+    command: celery -A app.infrastructure.worker.tasks.celery_app worker -l info -Q indexing
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/repoanalyzer
+      REDIS_URL: redis://redis:6379/0
+      FAISS_DIR: /app/faiss_indexes
+      OLLAMA_URL: http://host.docker.internal:11434
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - faiss_data:/app/faiss_indexes
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  faiss_data:

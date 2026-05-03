@@ -112,3 +112,4 @@ repoanalyzer/
 | Queue | Celery + Redis | Async ingestion, crash-safe |
 | Auth | JWT HS256 | Stateless, scalable |
 | Architecture | Clean/DDD | Testable, domain isolated |
+# Git_project_Analyzer_bot

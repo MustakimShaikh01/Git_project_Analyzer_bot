@@ -103,4 +103,3 @@ Internal use only. See LICENSE for details.
 
 ---
 Developed with ❤️ by the RepoAnalyzer Team.
-# Git_project_Analyzer_bot

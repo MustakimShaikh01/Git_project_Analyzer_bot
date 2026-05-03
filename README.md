@@ -102,4 +102,4 @@ pytest tests/ -v
 Internal use only. See LICENSE for details.
 
 ---
-Developed with ❤️ by the RepoAnalyzer Team.
+Developed with ❤️ by the Mustakim Shaikh.

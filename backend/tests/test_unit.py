@@ -9,7 +9,6 @@ from datetime import datetime
 
 from app.domain.repo import Repo, RepoStatus
 from app.domain.user import User
-from app.domain.query import QueryRecord, SearchResult
 from app.application.chunk_text import chunk_text, chunk_code_file
 
 
@@ -266,7 +265,7 @@ class TestAnalyzeRepoUseCase:
                 RuntimeError("git clone failed: no network")
             )
         else:
-            import tempfile, os, pathlib
+            import pathlib
             def fake_clone(url, target_dir):
                 # Create a small synthetic repo
                 p = pathlib.Path(target_dir) / "main.py"
